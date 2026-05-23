@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { categoryLabel } from "@/lib/categories";
 import { RecipeMeta } from "@/components/marketing/RecipeMeta";
 import { IngredientsPanel } from "@/components/marketing/IngredientsPanel";
+import { IngredientsMobileTrigger } from "@/components/marketing/IngredientsMobileTrigger";
 import { StepBlock } from "@/components/marketing/StepBlock";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -93,27 +94,37 @@ export default async function RecettePage({ params }: Props) {
         />
       </div>
 
-      {/* Ingrédients */}
-      <section className="max-w-4xl mx-auto px-6 mt-16">
-        <IngredientsPanel
-          groups={recipe.ingredientGroups}
-          baseServings={recipe.servings}
-          servingUnit={recipe.servingUnit}
-        />
-      </section>
+      {/* Ingrédients (sticky desktop) + Étapes */}
+      <div className="max-w-6xl mx-auto px-6 mt-20 grid grid-cols-1 lg:grid-cols-[320px_1fr] lg:gap-16">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <IngredientsPanel
+              groups={recipe.ingredientGroups}
+              baseServings={recipe.servings}
+              servingUnit={recipe.servingUnit}
+            />
+          </div>
+        </aside>
 
-      {/* Étapes */}
-      <section className="max-w-3xl mx-auto px-6 mt-20">
-        <p className="eyebrow">Étape par étape</p>
-        <h2 className="font-serif text-3xl md:text-4xl mt-3 mb-12">
-          Le <span className="accent">déroulé</span>
-        </h2>
-        <div className="space-y-14">
-          {recipe.steps.map((step) => (
-            <StepBlock key={step.id} step={step} />
-          ))}
-        </div>
-      </section>
+        <section className="max-w-3xl">
+          <p className="eyebrow">Étape par étape</p>
+          <h2 className="font-serif text-3xl md:text-4xl mt-3 mb-12">
+            Le <span className="accent">déroulé</span>
+          </h2>
+          <div className="space-y-14">
+            {recipe.steps.map((step) => (
+              <StepBlock key={step.id} step={step} />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Déclencheur drawer mobile */}
+      <IngredientsMobileTrigger
+        groups={recipe.ingredientGroups}
+        baseServings={recipe.servings}
+        servingUnit={recipe.servingUnit}
+      />
 
       {/* Galerie photos d'étapes */}
       {allStepPhotos.length > 0 && (
