@@ -1,0 +1,213 @@
+// ============================================================================
+// Chefdor Cakes — Schéma Prisma
+// ============================================================================
+// Principes :
+// - Une seule auteure (elle), donc pas de table User côté métier → on stocke
+//   juste l'email admin dans une variable d'env, NextAuth gère le reste.
+// - Slug stable par recette pour des URLs propres (chefdorcakes.com/tarte-citron).
+// - Ingrédients = lignes texte libres, regroupés en sections (pâte / crème / etc).
+// - Étapes ordonnées, avec un conseil optionnel et plusieurs photos optionnelles.
+// - Photos référencées par URL (hébergées sur UploadThing ou Cloudinary), avec
+//   meta (largeur/hauteur) pour éviter les layout shifts.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// RECETTE — l'entité centrale
+// ============================================================================
+model Recipe {
+  id       String  @id @default(cuid())
+  slug     String  @unique // ex. "tarte-citron-meringuee"
+  title    String
+  subtitle String? // sous-titre en italique, optionnel
+  intro    String  @db.Text // intro éditoriale
+
+  // Statut éditorial
+  status      RecipeStatus @default(DRAFT)
+  publishedAt DateTime?
+  isSignature Boolean      @default(false) // affiche la toque dorée
+  isSeasonal  Boolean      @default(false)
+
+  // Métadonnées culinaires
+  category    String // "tarte", "entremet", "gâteau", "petit-format"
+  difficulty  Difficulty
+  servings    Int        @default(6) // portions par défaut affichées
+  servingUnit String     @default("personnes") // "personnes", "parts", "pièces"
+  format      String? // "Tarte 24 cm", "Moule à cake 26 cm"...
+
+  // Temps (en minutes pour faciliter les calculs ; affichage formaté côté front)
+  prepMinutes Int
+  cookMinutes Int @default(0)
+  restMinutes Int @default(0)
+
+  // Photo héro
+  heroImageUrl    String
+  heroImageWidth  Int
+  heroImageHeight Int
+  heroImageAlt    String?
+
+  // Relations
+  ingredientGroups IngredientGroup[]
+  steps            Step[]
+  tags             Tag[]             @relation("RecipeTags")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([category])
+  @@index([isSignature])
+}
+
+enum RecipeStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum Difficulty {
+  FACILE
+  INTERMEDIAIRE
+  AVANCE
+}
+
+// ============================================================================
+// INGREDIENT GROUP — "Pâte sablée", "Crème au citron", "Meringue italienne"
+// ============================================================================
+model IngredientGroup {
+  id       String @id @default(cuid())
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  name  String // "Pâte sablée"
+  order Int // pour ordonner les groupes (drag & drop côté admin)
+
+  ingredients Ingredient[]
+
+  @@index([recipeId, order])
+}
+
+// ============================================================================
+// INGREDIENT — une ligne au sein d'un groupe
+// ============================================================================
+// Le champ `amount` est en Float pour permettre les fractions (0.5, 1.5).
+// L'unité est libre (g, kg, ml, cl, L, càs, càc, pincée...) — c'est plus simple
+// qu'une enum, et l'affichage est juste un suffixe texte.
+// Pour les ingrédients sans unité ("3 œufs"), unit = "" et amount = 3.
+// ============================================================================
+model Ingredient {
+  id      String          @id @default(cuid())
+  groupId String
+  group   IngredientGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  amount Float // 200, 0.5, 3
+  unit   String  @default("") // "g", "ml", "càs", "pincée", ""
+  name   String // "farine", "beurre froid", "œufs entiers"
+  note   String? // "tamisée", "à température ambiante" — affiché en gris
+
+  isScalable Boolean @default(true) // les pincées et œufs ne se scalent pas linéairement
+  order      Int
+
+  @@index([groupId, order])
+}
+
+// ============================================================================
+// STEP — étape de la recette
+// ============================================================================
+model Step {
+  id       String @id @default(cuid())
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  order   Int // 1, 2, 3...
+  title   String // "Préparer la pâte sablée"
+  content String @db.Text // texte de l'étape, supporte le Markdown léger (gras)
+
+  tip String? @db.Text // l'encart "Mon conseil" optionnel
+
+  photos StepPhoto[]
+
+  @@index([recipeId, order])
+}
+
+// ============================================================================
+// STEP PHOTO — photos illustrant une étape (0..N par étape)
+// ============================================================================
+model StepPhoto {
+  id     String @id @default(cuid())
+  stepId String
+  step   Step   @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  url    String
+  width  Int
+  height Int
+  alt    String?
+  order  Int
+
+  @@index([stepId, order])
+}
+
+// ============================================================================
+// TAG — hashtags libres (#citron, #été, #sansgluten)
+// ============================================================================
+model Tag {
+  id   String @id @default(cuid())
+  slug String @unique // "citron", "ete", "sans-gluten"
+  name String // "Citron", "Été", "Sans gluten"
+
+  recipes Recipe[] @relation("RecipeTags")
+}
+
+// ============================================================================
+// INFRA NEXTAUTH (Prisma Adapter)
+// ============================================================================
+// Pas de "User applicatif" : une seule admin via ADMIN_EMAIL.
+// Ces 3 tables sont des tables techniques requises par @auth/prisma-adapter
+// pour faire fonctionner le magic link Resend (stockage du token, lookup user).
+// On ne les utilise jamais dans le code métier.
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  accounts      Account[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
