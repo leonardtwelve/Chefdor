@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { CategoryFilter } from "@/components/marketing/CategoryFilter";
 import { RecipeCard } from "@/components/marketing/RecipeCard";
@@ -85,10 +86,14 @@ export default async function HomePage({ searchParams }: Props) {
       {/* À propos d'elle */}
       <section className="bg-[color:var(--cream-surface)] border-y border-[color:var(--border)] py-20 px-6">
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-10 items-center">
-          <div className="aspect-square bg-[color:var(--rose)] flex items-center justify-center">
-            <span className="font-serif italic text-[color:var(--brown-mute)] text-sm">
-              photo · à venir
-            </span>
+          <div className="relative aspect-[3/4] overflow-hidden bg-[color:var(--rose)]">
+            <Image
+              src="/maele.jpg"
+              alt="Maële dans sa cuisine"
+              fill
+              sizes="(min-width: 768px) 33vw, 100vw"
+              className="object-cover"
+            />
           </div>
           <div>
             <p className="eyebrow">À propos d&apos;elle</p>
