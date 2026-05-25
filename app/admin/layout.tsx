@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import "@uploadthing/react/styles.css";
 import { requireAdmin } from "@/lib/admin-guard";
 import { signOut } from "@/lib/auth";
 import { Logo } from "@/components/brand/Logo";

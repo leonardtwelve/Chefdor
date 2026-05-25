@@ -1,28 +1,38 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { auth } from "./auth";
+import { requireAdmin } from "./admin-guard";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
   recipeImage: f({ image: { maxFileSize: "8MB", maxFileCount: 1 } })
     .middleware(async () => {
-      const session = await auth();
-      if (!session?.user?.id) throw new UploadThingError("UNAUTHORIZED");
-      return { userId: session.user.id };
+      const adminId = await requireAdmin();
+      if (!adminId) throw new UploadThingError("UNAUTHORIZED");
+      return { adminId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { uploadedBy: metadata.userId, url: file.ufsUrl };
+      return {
+        uploadedBy: metadata.adminId,
+        url: file.ufsUrl,
+        width: 1600,
+        height: 1067,
+      };
     }),
 
   stepImage: f({ image: { maxFileSize: "4MB", maxFileCount: 10 } })
     .middleware(async () => {
-      const session = await auth();
-      if (!session?.user?.id) throw new UploadThingError("UNAUTHORIZED");
-      return { userId: session.user.id };
+      const adminId = await requireAdmin();
+      if (!adminId) throw new UploadThingError("UNAUTHORIZED");
+      return { adminId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { uploadedBy: metadata.userId, url: file.ufsUrl };
+      return {
+        uploadedBy: metadata.adminId,
+        url: file.ufsUrl,
+        width: 1200,
+        height: 800,
+      };
     }),
 } satisfies FileRouter;
 

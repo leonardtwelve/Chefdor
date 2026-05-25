@@ -14,6 +14,7 @@ import {
 import { useDebouncedSave } from "@/lib/hooks/useDebouncedSave";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { UploadButton } from "@/components/uploadthing-client";
 
 type Photo = { id: string; url: string };
 
@@ -38,7 +39,6 @@ export function StepCard({ step, canMoveUp, canMoveDown }: Props) {
     content: step.content,
     tip: step.tip ?? "",
   });
-  const [photoUrl, setPhotoUrl] = useState("");
   const [showTip, setShowTip] = useState(!!step.tip);
   const [, start] = useTransition();
 
@@ -135,27 +135,37 @@ export function StepCard({ step, canMoveUp, canMoveDown }: Props) {
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Input
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              placeholder="URL d'une photo d'étape"
-              className="text-sm"
-            />
-            <button
-              type="button"
-              disabled={!photoUrl.trim()}
-              onClick={() =>
-                start(async () => {
-                  await addStepPhoto(step.id, photoUrl.trim());
-                  setPhotoUrl("");
-                })
-              }
-              className="btn-label px-4 border border-[color:var(--border)] hover:border-brown disabled:opacity-30 whitespace-nowrap"
-            >
-              + Photo
-            </button>
-          </div>
+          <UploadButton
+            endpoint="stepImage"
+            onClientUploadComplete={(res) => {
+              if (!res) return;
+              start(async () => {
+                for (const file of res) {
+                  await addStepPhoto(
+                    step.id,
+                    file.serverData.url,
+                    file.serverData.width,
+                    file.serverData.height,
+                  );
+                }
+              });
+            }}
+            onUploadError={(e) => alert(`Erreur upload : ${e.message}`)}
+            appearance={{
+              container: "items-start",
+              button:
+                "ut-ready:bg-brown ut-ready:text-cream ut-ready:btn-label after:!bg-[color:var(--terracotta)] ut-uploading:after:!bg-[color:var(--terracotta)]",
+              allowedContent: "text-xs text-[color:var(--brown-mute)]",
+            }}
+            content={{
+              button({ ready, isUploading }) {
+                if (isUploading) return "Upload…";
+                if (ready) return "+ Photos d'étape";
+                return "Préparation…";
+              },
+              allowedContent: "JPEG/PNG/WebP — 4 Mo · jusqu'à 10 à la fois",
+            }}
+          />
         </div>
 
         <div className="flex flex-col gap-1">

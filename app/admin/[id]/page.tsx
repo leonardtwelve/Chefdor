@@ -45,6 +45,8 @@ export default async function EditRecettePage({ params }: Props) {
     isSignature: recipe.isSignature,
     isSeasonal: recipe.isSeasonal,
     heroImageUrl: recipe.heroImageUrl,
+    heroImageWidth: recipe.heroImageWidth,
+    heroImageHeight: recipe.heroImageHeight,
     heroImageAlt: recipe.heroImageAlt,
     tags: recipe.tags,
     ingredientGroups: recipe.ingredientGroups.map((g) => ({

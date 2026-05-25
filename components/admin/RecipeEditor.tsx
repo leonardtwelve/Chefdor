@@ -57,6 +57,8 @@ export type EditorRecipe = {
   isSignature: boolean;
   isSeasonal: boolean;
   heroImageUrl: string;
+  heroImageWidth: number;
+  heroImageHeight: number;
   heroImageAlt: string | null;
   tags: Tag[];
   ingredientGroups: Group[];
@@ -86,6 +88,8 @@ export function RecipeEditor({ recipe }: { recipe: EditorRecipe }) {
     isSignature: recipe.isSignature,
     isSeasonal: recipe.isSeasonal,
     heroImageUrl: recipe.heroImageUrl,
+    heroImageWidth: recipe.heroImageWidth,
+    heroImageHeight: recipe.heroImageHeight,
     heroImageAlt: recipe.heroImageAlt ?? "",
   });
 
@@ -110,6 +114,8 @@ export function RecipeEditor({ recipe }: { recipe: EditorRecipe }) {
         isSignature: v.isSignature,
         isSeasonal: v.isSeasonal,
         heroImageUrl: v.heroImageUrl,
+        heroImageWidth: v.heroImageWidth,
+        heroImageHeight: v.heroImageHeight,
         heroImageAlt: v.heroImageAlt || null,
       };
       await updateRecipeMain(recipe.id, patch);
@@ -373,7 +379,16 @@ export function RecipeEditor({ recipe }: { recipe: EditorRecipe }) {
           <HeroImageField
             url={main.heroImageUrl}
             alt={main.heroImageAlt || null}
-            onChange={(p) => setMain({ ...main, ...p, heroImageAlt: p.heroImageAlt ?? main.heroImageAlt })}
+            onChange={(p) =>
+              setMain({
+                ...main,
+                heroImageUrl: p.heroImageUrl ?? main.heroImageUrl,
+                heroImageWidth: p.heroImageWidth ?? main.heroImageWidth,
+                heroImageHeight: p.heroImageHeight ?? main.heroImageHeight,
+                heroImageAlt:
+                  p.heroImageAlt !== undefined ? (p.heroImageAlt ?? "") : main.heroImageAlt,
+              })
+            }
           />
           <TagsField recipeId={recipe.id} initialTags={recipe.tags} />
         </aside>
