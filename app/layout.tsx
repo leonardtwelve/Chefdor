@@ -44,6 +44,13 @@ export const metadata: Metadata = {
     title: "Chefdor Cakes",
     description: "Un carnet de recettes de pâtisserie.",
   },
+  // Cadeau privé : on demande aux moteurs de ne pas indexer.
+  // À retirer le jour où le site devient public.
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
 };
 
 export default function RootLayout({
