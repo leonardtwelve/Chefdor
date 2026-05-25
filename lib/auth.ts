@@ -9,8 +9,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/admin/connexion",
-    verifyRequest: "/admin/connexion/verifier",
+    signIn: "/connexion",
+    verifyRequest: "/connexion/verifier",
   },
   providers: [
     Resend({

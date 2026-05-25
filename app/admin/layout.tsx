@@ -11,7 +11,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const adminId = await requireAdmin();
-  if (!adminId) redirect("/admin/connexion");
+  if (!adminId) redirect("/connexion");
 
   const isBypass = adminId === "dev-bypass";
 
